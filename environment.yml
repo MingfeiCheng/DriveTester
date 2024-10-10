@@ -1,0 +1,57 @@
+name: ApolloSim
+channels:
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1=main
+  - _openmp_mutex=5.1=1_gnu
+  - ca-certificates=2024.9.24=h06a4308_0
+  - certifi=2022.12.7=py37h06a4308_0
+  - ld_impl_linux-64=2.40=h12ee557_0
+  - libffi=3.4.4=h6a678d5_1
+  - libgcc-ng=11.2.0=h1234567_1
+  - libgomp=11.2.0=h1234567_1
+  - libstdcxx-ng=11.2.0=h1234567_1
+  - ncurses=6.4=h6a678d5_0
+  - openssl=1.1.1w=h7f8727e_0
+  - pip=22.3.1=py37h06a4308_0
+  - python=3.7.16=h7a1cb2a_0
+  - readline=8.2=h5eee18b_0
+  - setuptools=65.6.3=py37h06a4308_0
+  - sqlite=3.45.3=h5eee18b_0
+  - tk=8.6.14=h39e8969_0
+  - wheel=0.38.4=py37h06a4308_0
+  - xz=5.4.6=h5eee18b_1
+  - zlib=1.2.13=h5eee18b_1
+  - pip:
+    - antlr4-python3-runtime==4.9.3
+    - beautifulsoup4==4.12.3
+    - charset-normalizer==3.3.2
+    - cycler==0.11.0
+    - decorator==5.1.1
+    - docker==6.1.3
+    - fonttools==4.38.0
+    - google==3.0.0
+    - hydra-core==1.3.2
+    - idna==3.10
+    - importlib-resources==5.12.0
+    - kiwisolver==1.4.5
+    - loguru==0.7.2
+    - matplotlib==3.5.3
+    - networkx==2.6.3
+    - numpy==1.21.6
+    - omegaconf==2.3.0
+    - pillow==9.5.0
+    - protobuf==4.24.4
+    - pyparsing==3.1.4
+    - python-dateutil==2.9.0.post0
+    - pyyaml==6.0.1
+    - requests==2.31.0
+    - scipy==1.4.1
+    - shapely==2.0.6
+    - six==1.16.0
+    - soupsieve==2.4.1
+    - tqdm==4.66.5
+    - typing-extensions==4.7.1
+    - urllib3==2.0.7
+    - zipp==3.15.0
+prefix: /data/c/anaconda3/envs/ApolloSim
