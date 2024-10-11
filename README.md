@@ -1,9 +1,5 @@
 # ApolloSim
 
-## TODO:
-- [ ] Complete the documents
-- [ ] Upload testing engine
-
 ## Setup
 ### 1. Quick Setup
 You can quickly setup this project by running the following commands:
