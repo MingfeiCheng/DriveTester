@@ -114,6 +114,13 @@ class AVFuzzer:
     def _run_global(self, start_time):
         # minimize is better
         logger.info('===== Start Fuzzer (AVFuzzer) =====')
+
+        self.best_seed = None
+        self.best_fitness_lst = []
+        self.curr_population = list()
+        self.prev_population = list()
+        self.curr_iteration = 0
+        self.last_restart_iteration = 0
         self.last_result_time = time.time()
         while len(self.curr_population) < self.population_size:
             mutated_scenario = self.adapter.mutation_adaptor(
@@ -213,7 +220,8 @@ class AVFuzzer:
                 if self.best_seed is None or curr_seed.fitness < self.best_seed.fitness:
                     self.best_seed = copy.deepcopy(curr_seed)
 
-            self.best_fitness_lst.append(self.best_seed.fitness)
+                self.best_fitness_lst.append(self.best_seed.fitness)
+
             if noprogress:
                 self.best_fitness_after_restart = self.best_seed.fitness
                 noprogress = False

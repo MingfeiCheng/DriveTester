@@ -1,4 +1,4 @@
-name: ApolloSim
+name: DriveTester
 channels:
   - defaults
 dependencies:
@@ -114,4 +114,4 @@ dependencies:
     - wrapt==1.16.0
     - zict==2.2.0
     - zipp==3.15.0
-prefix: /data/c/anaconda3/envs/ApolloSim
+prefix: /data/c/anaconda3/envs/DriveTester
