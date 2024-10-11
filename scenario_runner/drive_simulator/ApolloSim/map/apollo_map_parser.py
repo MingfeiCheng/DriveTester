@@ -597,59 +597,6 @@ class MapParser(object):
         neighbors = forward_neighbors + reverse_neighbors
         return neighbors
 
-    def get_neighbors(self, lane_id, direct = 'forward', side='left', driving_only=False) -> List:
-        assert side in ['left', 'right', 'both']
-        assert direct in ['forward', 'reverse', 'both']
-
-        lane = self.__lanes[lane_id]
-
-        # Find forward neighbors
-        forward_neighbors = list()
-        if (side == 'left' or side == 'both') and (direct == 'forward' or direct == 'both'):
-            left_forwards = lane.left_neighbor_forward_lane_id
-            for lf in left_forwards:
-                lf_id = lf.id
-                if not driving_only:
-                    forward_neighbors.append(lf_id)
-                else:
-                    if self.is_driving_lane(lf_id):
-                        forward_neighbors.append(lf_id)
-
-        if (side == 'right' or side == 'both') and (direct == 'forward' or direct == 'both'):
-            right_forwards = lane.right_neighbor_forward_lane_id
-            for rf in right_forwards:
-                rf_id = rf.id
-                if not driving_only:
-                    forward_neighbors.append(rf_id)
-                else:
-                   if self.is_driving_lane(rf_id):
-                        forward_neighbors.append(rf_id)
-
-        # Find reverse neighbors
-        reverse_neighbors = list()
-        if (side == 'left' or side == 'both') and (direct == 'reverse' or direct == 'both'):
-            left_reverses = lane.left_neighbor_reverse_lane_id
-            for lr in left_reverses:
-                lr_id = lr.id
-                if not driving_only:
-                    reverse_neighbors.append(lr_id)
-                else:
-                    if self.is_driving_lane(lr_id):
-                        reverse_neighbors.append(lr_id)
-
-        if (side == 'right' or side == 'both') and (direct == 'reverse' or direct == 'both'):
-            right_reverses = lane.right_neighbor_reverse_lane_id
-            for rr in right_reverses:
-                rr_id = rr.id
-                if not driving_only:
-                    reverse_neighbors.append(rr_id)
-                else:
-                    if self.is_driving_lane(rr_id):
-                        reverse_neighbors.append(rr_id)
-
-        neighbors = forward_neighbors + reverse_neighbors
-        return neighbors
-
     def get_wide_neighbors(self, lane_id, direct = 'forward', side='left', driving_only=False) -> List:
         current_lanes = [lane_id]
         last_lanes = list()
@@ -792,10 +739,12 @@ class MapParser(object):
         return trace_path, lane_pool
 
 
-    def get_random_route_by_cover_lane(self,
-                                       cover_lane: Any,
-                                       prev_depth: int = 1,
-                                       next_depth: int = 3) -> List:
+    def get_random_route_by_cover_lane(
+            self,
+            cover_lane: Any,
+            prev_depth: int = 1,
+            next_depth: int = 3
+    ) -> List:
 
         trace = [cover_lane]
         for i in range(prev_depth):
@@ -815,10 +764,12 @@ class MapParser(object):
             trace.append(succ_lane)
         return trace
 
-    def get_random_route_by_prev_lanes(self,
-                                       lane_pool: List,
-                                       prev_depth: int = 1,
-                                       next_depth: int = 3) -> List:
+    def get_random_route_by_prev_lanes(
+            self,
+            lane_pool: List,
+            prev_depth: int = 1,
+            next_depth: int = 3
+    ) -> List:
         tmp_lane = random.choice(lane_pool)
         trace = [tmp_lane]
         for i in range(prev_depth):
@@ -856,9 +807,11 @@ class MapParser(object):
                 count += 1
         return trace
 
-    def get_random_route_from_start_lane(self,
-                                         start_lane: Any,
-                                         next_depth: int = 3) -> List:
+    def get_random_route_from_start_lane(
+            self,
+            start_lane: Any,
+            next_depth: int = 3
+    ) -> List:
 
         trace = [start_lane]
         count = 0
@@ -872,10 +825,12 @@ class MapParser(object):
             count += 1
         return trace
 
-    def get_random_changing_route_from_start_lane(self,
-                                                  start_lane: Any,
-                                                  next_depth: int = 3,
-                                                  lane_change_limit: int = 1) -> List:
+    def get_random_changing_route_from_start_lane(
+            self,
+            start_lane: Any,
+            next_depth: int = 3,
+            lane_change_limit: int = 1
+    ) -> List:
 
         trace = [start_lane]
         count = 0
@@ -925,9 +880,11 @@ class MapParser(object):
                             lane_change_count += 1
         return trace
 
-    def get_waypoint_s_for_lane(self,
-                               lane_id: str,
-                               waypoint_interval: float) -> List[float]:
+    def get_waypoint_s_for_lane(
+            self,
+            lane_id: str,
+            waypoint_interval: float
+    ) -> List[float]:
         """
         Generate initial waypoints for a NPC
         reduce waypoint number
@@ -959,3 +916,65 @@ class MapParser(object):
             next_waypoints.append((lane_id, next_s))
 
         return next_waypoints
+
+    def get_potential_lanes(
+            self,
+            start_lane,
+            end_lane
+    ) -> Tuple[List, List]:
+
+        def find_path(graph, start, end, t_path):
+            t_path = t_path + [start]
+            if start == end:
+                return t_path
+            if start not in graph:
+                return None
+            for node in graph[start]:
+                if node not in t_path:
+                    newpath = find_path(graph, node, end, t_path)
+                    if newpath:
+                        return newpath
+            return None
+
+        ### Step 1: Extract lane regions
+        lane_pool = {start_lane, end_lane}  # Use a set for automatic uniqueness
+        start_lane_polygon = self.get_lane_polygon(start_lane)
+        end_lane_polygon = self.get_lane_polygon(end_lane)
+        dist_start2end = start_lane_polygon.distance(end_lane_polygon)
+
+        while True:
+            last_lane_pool_size = len(lane_pool)
+            next_pool = set()
+
+            for lane_id in lane_pool:
+                # Expand neighbors and predecessors/successors, all at once
+                next_pool.update(self.get_wide_neighbors(lane_id, direct='forward', side='both', driving_only=True))
+                next_pool.update(self.get_successor_lanes(lane_id, driving_only=True))
+                next_pool.update(self.get_predecessor_lanes(lane_id, driving_only=True))
+
+            # Filter lanes based on their proximity to the start or end polygons
+            next_pool_filter = {
+                lane_id for lane_id in next_pool
+                if self.get_lane_polygon(lane_id).distance(start_lane_polygon) < dist_start2end + 30
+                   or self.get_lane_polygon(lane_id).distance(end_lane_polygon) < dist_start2end + 30
+            }
+
+            # Update lane pool
+            lane_pool.update(next_pool_filter)
+
+            # If no new lanes were added, break the loop
+            if len(lane_pool) == last_lane_pool_size:
+                break
+
+        ### Step2: construct connection in lane pool
+        lane_graph = dict()
+        lane_pool = list(lane_pool)
+        for lane_id in lane_pool:
+            direct_connections = list()
+            direct_connections += self.get_neighbors(lane_id, direct='forward', side='both', driving_only=True)
+            direct_connections += self.get_successor_lanes(lane_id, driving_only=True)
+            lane_graph[lane_id] = list(set(direct_connections))
+
+        trace_path = list()
+        trace_path = find_path(lane_graph, start_lane, end_lane, trace_path)
+        return trace_path, lane_pool

@@ -1,3 +1,4 @@
+import copy
 import time
 import pickle
 
@@ -55,11 +56,11 @@ class TrafficManager:
         )
 
         self.vehicle_manager = VehicleManager(
-            self.scenario_config.waypoint_vehicle_config_pool,
+            self.scenario_config.vehicle_config_pool,
             self.bridge
         )
         self.walker_manager = WalkerManager(
-            self.scenario_config.waypoint_walker_config_pool,
+            self.scenario_config.walker_config_pool,
             self.bridge
         )
         self.static_obstacle_manager = StaticObstacleManager(
@@ -79,6 +80,7 @@ class TrafficManager:
         self.local_spend_time = 0.0
         while not self.is_termination:
             step_start_time = time.time()
+            # self.traffic_light_manager.tick()
             self.traffic_light_manager.publish_state()
             self.apollo_manager.publish_state()
             self.vehicle_manager.publish_state()
@@ -96,7 +98,7 @@ class TrafficManager:
         while not self.is_termination:
             step_start_time = time.time()
             frame_recording = self.bridge.recording()
-            self.traffic_recording[recording_frame] = frame_recording
+            self.traffic_recording[recording_frame] = copy.deepcopy(frame_recording)
             step_end_time = time.time()
             if step_end_time - step_start_time > 1 / float(DataProvider.SIM_FREQUENCY):
                 pass

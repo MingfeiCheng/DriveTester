@@ -1,0 +1,53 @@
+# System Setting
+system:
+  output_root: /outputs
+  debug: true
+  resume: true
+  tag: t1
+
+# Scenario Setting
+scenario:
+  map_name: borregas_ave
+  start_lane_id: lane_31
+  end_lane_id: lane_15
+
+# Scenario Runner Setting
+scenario_runner:
+  name: ApolloSim
+  parameters:
+    container_name: null
+    save_traffic_recording: true
+    save_apollo_recording: true
+
+# Testing Engine Setting
+testing_engine:
+  # Algorithm Setting
+  algorithm:
+    name: avfuzzer
+    parameters:
+      run_hour: 2
+      local_run_hour: 0.5
+      num_vehicle: 5
+      num_walker: 2
+      num_static: 2
+      population_size: 4
+      pm: 0.6
+      pc: 0.6
+
+  # Oracle Setting
+  oracle:
+    collision:
+      threshold: 0.01
+    destination:
+      threshold: 5.0
+    stuck:
+      speed_threshold: 0.3
+      max_stuck_time: 30
+    timeout:
+      time_limit: 100
+
+hydra:
+  job:
+    chdir: True
+  run:
+    dir: disabled

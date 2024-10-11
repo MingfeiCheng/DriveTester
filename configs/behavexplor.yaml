@@ -1,0 +1,54 @@
+# System Setting
+system:
+  debug: true
+  resume: true
+  tag: t1
+
+# Scenario Setting
+scenario:
+  map_name: borregas_ave
+  start_lane_id: lane_31
+  end_lane_id: lane_9  # lane 15
+
+# Scenario Runner Setting
+scenario_runner:
+  name: ApolloSim
+  parameters:
+    container_name: null # do not fix
+    save_traffic_recording: true
+    save_apollo_recording: true
+
+# Testing Engine Setting
+testing_engine:
+  # Algorithm Setting
+  algorithm:
+    name: behavexplor
+    parameters:
+      run_hour: 2
+      num_vehicle: 5
+      num_walker: 2
+      num_static: 2
+      window_size: 10
+      cluster_num: 20
+      threshold_coverage: 0.4
+      threshold_energy: 0.8
+      feature_resample: linear
+      initial_corpus_size: 1
+
+  # Oracle Setting
+  oracle:
+    collision:
+      threshold: 0.01
+    destination:
+      threshold: 5.0
+    stuck:
+      speed_threshold: 0.3
+      max_stuck_time: 30
+    timeout:
+      time_limit: 100
+
+hydra:
+  job:
+    chdir: True
+  run:
+    dir: disabled

@@ -36,7 +36,7 @@ class WaypointVehicle(object):
         agent_class = agent_library.get(self.agent_config.category)
         self.agent = agent_class(
             idx=self.agent_config.idx,
-            location=self.agent_config.initial_waypoint.location,
+            location=copy.deepcopy(self.agent_config.initial_waypoint.location),
             role=self.agent_config.role
         )
         self.route = self.agent_config.behavior
@@ -128,8 +128,9 @@ class WaypointVehicle(object):
         self.thread_run.start()
 
     def stop(self):
-        self.thread_run.join()
-        self.thread_run = None
+        if self.thread_run is not None:
+            self.thread_run.join()
+            self.thread_run = None
 
     def get_agent(self) -> AgentClass:
         return self.agent
@@ -143,8 +144,9 @@ class WaypointVehicle(object):
     def _run(self):
         while not self.traffic_bridge.is_termination:
             # update state
-            self.tick(1 / DataProvider.SIM_FREQUENCY)
-            time.sleep(1 / DataProvider.SIM_FREQUENCY)
+            delta_time = 1 / DataProvider.SIM_FREQUENCY
+            self.tick(delta_time)
+            time.sleep(delta_time)
 
         if self.debug:
             plt.figure()

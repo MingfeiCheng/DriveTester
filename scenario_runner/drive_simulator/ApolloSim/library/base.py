@@ -1,6 +1,6 @@
 import copy
 import math
-
+from dataclasses import dataclass
 from threading import Lock
 from typing import TypeVar, Tuple, List
 from shapely.geometry import Polygon, Point
@@ -55,11 +55,25 @@ class VehicleControl(object):
         self.brake = brake
         self.steering = steering
 
+    def json_data(self):
+        return {
+            "throttle": self.throttle,
+            "brake": self.brake,
+            "steering": self.steering
+        }
+
 class WalkerControl(object):
     def __init__(self, acceleration: float = 0.0, heading:float = 0.0):
         self.acceleration = acceleration
         self.heading = heading
 
+    def json_data(self):
+        return {
+            "acceleration": self.acceleration,
+            "heading": self.heading
+        }
+
+@dataclass
 class BaseModel(object):
 
     id: int = 0
@@ -107,6 +121,15 @@ class BaseModel(object):
         steering=0.0,
     )
 
+    last_location: LocationConfig = LocationConfig(
+        x=0.0,
+        y=0.0,
+        z=0.0,
+        pitch=0.0,
+        yaw=0.0,
+        roll=0.0,
+    )
+
     role: str = 'unknown'
 
     _thread_lock: Lock = Lock()
@@ -121,6 +144,7 @@ class BaseModel(object):
         self.brake = 0.0
         self.steering = 0.0
         self.role = role
+        self.last_location = copy.deepcopy(self.location)
 
     def apply_control(self, control: VehicleControl):
         """
@@ -136,6 +160,7 @@ class BaseModel(object):
         assert -1 <= steering <= 1
 
         with self._thread_lock:
+            self.last_location = copy.deepcopy(self.location)
             delta_time = 1 / DataProvider.SIM_FREQUENCY
 
             # 1. Compute current acceleration based on throttle and brake
@@ -233,5 +258,19 @@ class BaseModel(object):
     def dist_center2point(self, point: Point):
         center = Point(self.location.x, self.location.y)
         return center.distance(point)
+
+    def json_data(self):
+        return {
+            "id": self.id,
+            "category": self.category,
+            "bbox": self.bbox.json_data(),
+            "location": self.location.json_data(),
+            "speed": self.speed,
+            "angular_speed": self.angular_speed,
+            "acceleration": self.acceleration,
+            "control": self.control.json_data(),
+            "role": self.role,
+            "last_location": self.last_location.json_data()
+        }
 
 AgentClass = TypeVar("AgentClass", bound=BaseModel)

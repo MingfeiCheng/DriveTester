@@ -20,8 +20,9 @@ class ApolloContainer:
             self,
             name: str
     ) -> None:
-        self.name = "apollo_dev_mingfeicheng" # test for name
+
         self.user = os.environ.get("USER")
+        self.name = name #f"apollo_dev_{self.user}"  # test for name
         # create docker container if it is not exist
         self.hd_map = DataProvider.map_name
 

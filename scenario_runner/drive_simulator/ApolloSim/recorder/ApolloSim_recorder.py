@@ -3,7 +3,7 @@ import threading
 
 from typing import Dict, Optional
 
-from scenario_runner.drive_simulator.ApolloSim.traffic_events import TrafficEvent
+from scenario_runner.drive_simulator.ApolloSim.traffic_events import EventType
 
 class ScenarioRecorder:
     """
@@ -13,7 +13,8 @@ class ScenarioRecorder:
 
     _update_lock = threading.Lock()
 
-    traffic_events: Dict[str, Dict[str, TrafficEvent]] # id: events
+    traffic_events: Dict[str, Dict[str, EventType]] # id: events
+    scenario_overview: Dict[str, str]
     traffic_record_path: str
     apollo_record_path: Dict[str, str]
     scenario_feedback: Dict[str, Dict[str, float]] # id: feed_name: feed_value
@@ -25,13 +26,16 @@ class ScenarioRecorder:
         self.traffic_record_path = None
         self.apollo_record_path = {}
         self.scenario_feedback = {}
+        self.scenario_overview = {}
         self.timer = {}
 
-    def update_traffic_events(self, idx: str, oracle_name: str, traffic_event: Optional[TrafficEvent]):
+    def update_traffic_events(self, idx: str, oracle_name: str, traffic_event: Optional[EventType]):
         with self._update_lock:
             if idx not in self.traffic_events:
                 self.traffic_events[idx] = {}
-            self.traffic_events[idx][oracle_name] = traffic_event
+                self.scenario_overview[idx] = ""
+            self.traffic_events[idx][oracle_name] = traffic_event.name if traffic_event else None
+            self.scenario_overview[idx] += f"{traffic_event.name}," if traffic_event else ""
 
     def update_apollo_record(self, idx: str, apollo_record: str):
         with self._update_lock:
@@ -58,11 +62,21 @@ class ScenarioRecorder:
             "traffic_events": self.traffic_events,
             "traffic_record_path": self.traffic_record_path,
             "apollo_record_path": self.apollo_record_path,
-            "scenario_feedback": self.scenario_feedback
+            "scenario_feedback": self.scenario_feedback,
+            "scenario_overview": self.scenario_overview,
         }
 
         with open(result_path, "w") as f:
             json.dump(result, f, indent=4)
+
+    def to_json(self):
+        return {
+            "traffic_events": self.traffic_events,
+            "traffic_record_path": self.traffic_record_path,
+            "apollo_record_path": self.apollo_record_path,
+            "scenario_feedback": self.scenario_feedback,
+            "scenario_overview": self.scenario_overview,
+        }
 
     def print_result(self):
         result = {
