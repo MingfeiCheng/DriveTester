@@ -8,9 +8,10 @@ class CollisionOracle(BaseOracle):
 
     oracle_name = 'oracle.collision'
 
-    def __init__(self, agent_id: str, traffic_bridge: TrafficBridge):
+    def __init__(self, agent_id: str, traffic_bridge: TrafficBridge, threshold: float = 0.01):
         super(CollisionOracle, self).__init__(agent_id, traffic_bridge)
         self.min_distance = np.inf
+        self.threshold = threshold
 
     def tick(self):
 
@@ -27,7 +28,7 @@ class CollisionOracle(BaseOracle):
                 if agent_distance < self.min_distance:
                     self.min_distance = agent_distance
 
-                if agent_distance < 0.01:
+                if agent_distance < self.threshold:
                     return EventType.COLLISION, self.min_distance
 
         return None, self.min_distance

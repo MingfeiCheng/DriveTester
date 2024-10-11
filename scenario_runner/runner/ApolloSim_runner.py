@@ -3,6 +3,7 @@ import os.path
 import time
 import traceback
 
+from numpy.core.defchararray import lower
 from omegaconf import DictConfig
 from tqdm import tqdm
 from loguru import logger
@@ -13,7 +14,7 @@ from scenario_runner.drive_simulator.ApolloSim.recorder import ScenarioRecorder
 from scenario_runner.drive_simulator.ApolloSim.traffic_manager import TrafficManager
 from . import register_runner
 
-@register_runner("ApolloSim")
+@register_runner("runner.ApolloSim")
 class ScenarioRunner:
     """
     Executes a scenario based on the specification
@@ -31,12 +32,19 @@ class ScenarioRunner:
             self,
             scenario_config: ApolloSimScenarioConfig
     ) -> ScenarioRecorder:
-        try:
-            scenario_recorder = self._run_scenario(scenario_config)
-        except Exception as e:
-            logger.error(traceback.format_exc())
-            raise RuntimeError("Has bugs in running function")
-        return copy.deepcopy(scenario_recorder)
+
+        trie_time = 0
+        scenario_recorder = None
+        while trie_time < 5:
+            trie_time += 1
+            try:
+                scenario_recorder = self._run_scenario(scenario_config)
+            except Exception as e:
+                traceback.print_exc()
+                logger.warning('Has some errors, retry')
+                continue
+            break
+        return scenario_recorder
 
     @staticmethod
     def _run_scenario(scenario_config: ApolloSimScenarioConfig):
@@ -71,7 +79,8 @@ class ScenarioRunner:
         simulation_spend_time = m_end_time - m_start_time
         logger.info('--> [Simulation Time] Simulation Spend Time (seconds): [=]{}[=]', simulation_spend_time)
 
-        scenario_recorder = traffic_manager.scenario_result
+        scenario_recorder = copy.deepcopy(traffic_manager.scenario_result)
         scenario_recorder.update_timer('simulation', simulation_spend_time)
         scenario_recorder.print_result()
+
         return scenario_recorder

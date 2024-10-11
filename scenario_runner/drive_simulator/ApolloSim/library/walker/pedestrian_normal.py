@@ -1,13 +1,14 @@
 import math
 import copy
 import numpy as np
-
+from dataclasses import dataclass
 from ..base import BaseModel, WalkerControl, DataProvider, normalize_angle
 from .. import register_agent
 from ...config import BBoxConfig, LocationConfig
 
 
 @register_agent("walker.pedestrian.normal")
+@dataclass
 class PedestrianNormal(BaseModel):
 
     category = "walker.pedestrian.normal"
@@ -33,6 +34,7 @@ class PedestrianNormal(BaseModel):
         heading = control.heading
 
         with self._thread_lock:
+            self.last_location = copy.deepcopy(self.location)
             delta_time = 1 / DataProvider.SIM_FREQUENCY
             curr_acceleration = float(np.clip(acceleration, -abs(self.max_deceleration), abs(self.max_acceleration)))
             curr_speed = self.speed

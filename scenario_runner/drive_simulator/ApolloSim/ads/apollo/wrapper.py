@@ -63,14 +63,16 @@ class ApolloWrapper:
         self.debug_logger = debug_logger
 
         self.idx = self.apollo_config.idx
-        self.container_name = f"{DataProvider.container_name}_{self.idx}"
+        if DataProvider.container_name:
+            self.container_name = DataProvider.container_name
+        else:
+            self.container_name = f"{DataProvider.tag}_{self.idx}"
 
         # other data
         self.route = self.apollo_config.route
         self.trigger_time = self.apollo_config.trigger_time
         self.routing_response = False
         self.control_data = None
-
         self.throttle_percentage = 0.0
         self.brake_percentage = 0.0
         self.steering_percentage = 0.0
@@ -127,10 +129,7 @@ class ApolloWrapper:
             self.throttle_percentage = data.throttle / 100.0
             self.brake_percentage = data.brake / 100.0
             self.steering_percentage = data.steering_target / 100.0
-            # self.steering_percentage = -data.debug.simple_lat_debug.lateral_error
-            # time.sleep( 1 / 25.0)
-            # logger.debug(f'control_acceleration: {self.control_acceleration}')
-            # logger.debug(f'control_steering: {self.control_steering}')
+
 
         self.container.bridge.add_subscriber(Topics.Control, control_cb)
 
@@ -262,6 +261,7 @@ class ApolloWrapper:
                 y=math.sin(obs_state.location.yaw) * obs_state.speed,
                 z=0.0
             )
+
             obs_polygon, apollo_points, _ = obs_state.get_polygon()
             if obs_state.category.split('.')[0] == 'vehicle':
                 obs_type = PerceptionObstacle.VEHICLE
@@ -273,6 +273,7 @@ class ApolloWrapper:
                 obs_type = PerceptionObstacle.UNKNOWN_UNMOVABLE
             else:
                 obs_type = PerceptionObstacle.UNKNOWN
+
 
             obs = PerceptionObstacle(
                 id=obs_state.id,

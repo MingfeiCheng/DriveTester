@@ -1,3 +1,4 @@
+import copy
 import os
 import shutil
 import time
@@ -23,8 +24,8 @@ class ApolloAgent:
     Runner to start and running in the scenario, for passing information to ApolloWrapper
     TODO: may need rerouting once stuck?
     """
-    PERCEPTION_FREQUENCY = 25.0 #25.0  # 10.0 # 25.0
-    LOCALIZATION_FREQUENCY = 100.0
+    PERCEPTION_FREQUENCY = DataProvider.SIM_FREQUENCY #25.0  # 10.0 # 25.0
+    LOCALIZATION_FREQUENCY = DataProvider.SIM_FREQUENCY
 
     _update_lock = Lock()
 
@@ -71,7 +72,7 @@ class ApolloAgent:
         agent_class = agent_library.get(self.apollo_config.category)
         self.agent = agent_class(
             idx=self.apollo_config.idx,
-            location=self.apollo_config.initial_waypoint.location,
+            location=copy.deepcopy(self.apollo_config.initial_waypoint.location),
             role=self.apollo_config.role
         )
 
@@ -99,13 +100,14 @@ class ApolloAgent:
     def oracle_list(self):
         return {
             'oracle.collision': {
+                'threshold': 0.01
             },
             'oracle.stuck': {
                 'speed_threshold': 0.3, # m/s
-                'max_stuck_time': 90 # seconds
+                'max_stuck_time': 30 # seconds
             },
             'oracle.timeout': {
-                'time_limit': 600 # 600 seconds
+                'time_limit': 100 # 600 seconds
             },
             'oracle.destination': {
                 'destination': self.apollo_config.route[-1],

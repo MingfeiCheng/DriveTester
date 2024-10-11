@@ -1,6 +1,8 @@
 import time
 
 from threading import Thread
+
+from common.data_provider import DataProvider
 from scenario_runner.drive_simulator.ApolloSim.config.traffic_light import TrafficLightConfig
 from scenario_runner.drive_simulator.ApolloSim.traffic_messenger import TrafficBridge
 
@@ -27,8 +29,9 @@ class TrafficLightAgent(object):
         self.thread_run.start()
 
     def stop(self):
-        self.thread_run.join()
-        self.thread_run = None
+        if self.thread_run is not None:
+            self.thread_run.join()
+            self.thread_run = None
 
     def get_state(self):
         return self.curr_state
@@ -36,7 +39,7 @@ class TrafficLightAgent(object):
     def _run(self):
         self.start_time = time.time()
         while not self.traffic_bridge.is_termination:
-            time.sleep(0.01)
+            time.sleep(1 / DataProvider.SIM_FREQUENCY)
             # update state
             self.tick()
 

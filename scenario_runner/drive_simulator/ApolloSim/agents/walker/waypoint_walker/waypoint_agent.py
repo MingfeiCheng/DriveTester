@@ -7,12 +7,13 @@ from threading import Thread
 from typing import Dict
 
 import numpy as np
+import matplotlib.pyplot as plt
 from shapely.geometry import Point
 
 from common.data_provider import DataProvider
 from common.logger_tools import get_instance_logger
 
-from scenario_runner.drive_simulator.ApolloSim.library import AgentClass, register_agent, WalkerControl
+from scenario_runner.drive_simulator.ApolloSim.library import AgentClass, agent_library, WalkerControl
 from scenario_runner.drive_simulator.ApolloSim.config.walker import WalkerConfig, WaypointConfig
 from .parameters import get_basic_config
 from scenario_runner.drive_simulator.ApolloSim.traffic_messenger import TrafficBridge
@@ -31,13 +32,13 @@ class WaypointWalker:
 
         self.agent_config = agent_config
         # obtain agent
-        agent_class = register_agent(self.agent_config.category)
+        agent_class = agent_library.get(self.agent_config.category)
         self.agent = agent_class(
             idx=self.agent_config.idx,
-            location=self.agent_config.initial_waypoint.location,
+            location=copy.deepcopy(self.agent_config.initial_waypoint.location),
             role=self.agent_config.role
         )
-        self.route = self.agent_config.route
+        self.route = self.agent_config.behavior
         self.traffic_bridge = traffic_bridge
 
         self.debug = DataProvider.debug
@@ -48,7 +49,7 @@ class WaypointWalker:
         self._ignore_traffic_light = parameters.get('ignore_traffic_light', False)
         self._max_speed = parameters.get('max_speed', 12.0)
         self._max_speed_junction = parameters.get('max_speed_junction', 10.0)
-        self._min_distance = parameters.get('min_distance', 2.0) * self.MIN_DISTANCE_PERCENTAGE
+        self._min_distance = parameters.get('min_distance', 1.0) * self.MIN_DISTANCE_PERCENTAGE
         self._max_acceleration = parameters.get('max_acceleration', 6.0)
         self._max_deceleration = parameters.get('max_deceleration', -6.0)
         self._max_steering = parameters.get('max_steering', 0.8)
@@ -73,13 +74,21 @@ class WaypointWalker:
 
         if self.debug:
             debug_folder = DataProvider.debug_folder()
-            vehicle_debug_folder = os.path.join(debug_folder, f'traffic_manager/walker')
-            if not os.path.exists(vehicle_debug_folder):
-                os.makedirs(vehicle_debug_folder)
+            self.debug_folder = os.path.join(debug_folder, f'traffic_manager/walker')
+            if not os.path.exists( self.debug_folder):
+                os.makedirs( self.debug_folder)
 
-            log_file = os.path.join(vehicle_debug_folder, f"{self.agent.id}.log")
+            log_file = os.path.join( self.debug_folder, f"{self.agent.id}.log")
             self.logger = get_instance_logger(f"waypoint_walker_{self.agent.id}", log_file)
             self.logger.info("Logger initialized for this instance")
+            self.plan_x = []
+            self.plan_y = []
+            for i, waypoint in enumerate(self.route):
+                self.plan_x.append(waypoint.location.x)
+                self.plan_y.append(waypoint.location.y)
+
+            self.actual_x = []
+            self.actual_y = []
 
         self.traffic_bridge.register_actor(
             self.agent.id,
@@ -96,8 +105,9 @@ class WaypointWalker:
         self.thread_run.start()
 
     def stop(self):
-        self.thread_run.join()
-        self.thread_run = None
+        if self.thread_run is not None:
+            self.thread_run.join()
+            self.thread_run = None
 
     def get_agent(self) -> AgentClass:
         return self.agent
@@ -111,13 +121,23 @@ class WaypointWalker:
     def _run(self):
         while not self.traffic_bridge.is_termination:
             # update state
-            self.tick(1 / DataProvider.SIM_FREQUENCY)
-            time.sleep(1 / DataProvider.SIM_FREQUENCY)
+            delta_time = 1 / DataProvider.SIM_FREQUENCY
+            self.tick(delta_time)
+            time.sleep(delta_time)
+
+        if self.debug:
+            plt.figure()
+            plt.plot(self.plan_x, self.plan_y, 'b-')
+            plt.plot(self.actual_x, self.actual_y, 'r-')
+            plt.show()
+            plt.savefig(f"{ self.debug_folder}/{self.agent.id}_traj.png")
+            plt.close()
 
     def tick(
             self,
             delta_time: float
     ):
+
         self.step += 1
         curr_location = Point([self.agent.location.x, self.agent.location.y])
 
@@ -162,8 +182,6 @@ class WaypointWalker:
             delta_time
         )  # current acceleration & steering
         walker_control = WalkerControl(acceleration=next_acceleration, heading=next_heading)
-        self.agent.apply_control(walker_control)
-
         if self.debug:
             self.logger.info(f"delta_time: {delta_time}")
             self.logger.info(f"remain roue length: {len(self._waypoints_queue)}")
@@ -178,12 +196,16 @@ class WaypointWalker:
                 f"distance: {((self.agent.location.x - target_waypoint.location.x) ** 2 + (self.agent.location.y - target_waypoint.location.y) ** 2) ** 0.5}")
             self.logger.info(f"hazard_detected: {hazard_detected}")
             self.logger.info('=============End=============')
+            self.actual_x.append(self.agent.location.x)
+            self.actual_y.append(self.agent.location.y)
+
+        self.agent.apply_control(walker_control)
 
         # 5. purge the queue of obsolete waypoints
         max_index = -1
         next_location = Point([self.agent.location.x, self.agent.location.y])
         for i, waypoint in enumerate(self._waypoint_buffer):
-            waypoint_location = Point([waypoint.x, waypoint.y])
+            waypoint_location = Point([waypoint.location.x, waypoint.location.y])
             if waypoint_location.distance(next_location) < self._min_distance or waypoint_location.distance(curr_location) < self._min_distance:
                 max_index = i
         if max_index >= 0:
@@ -242,12 +264,16 @@ class WaypointWalker:
             # self.logger.debug(f'vehicle id: {vehicle.id}, curr id: {curr_state.id}')
             if agent_id == self.agent.id:
                 continue
-            if self._ignore_static_obstacle and agent.category.split('.')[0] == 'static':
+
+            if agent.category.split('.')[0] == 'walker':
                 continue
+
+            if agent.category.split('.')[0] == 'static':
+                continue
+
             if self._ignore_vehicle and agent.category.split('.')[0] == 'vehicle':
                 continue
-            if self._ignore_walker and agent.category.split('.')[0] == 'walker':
-                continue
+
 
             obstacle_polygon, _, _ = agent.get_polygon()
             if buffer_polygon.intersects(obstacle_polygon):

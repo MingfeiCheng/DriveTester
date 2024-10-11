@@ -36,10 +36,10 @@ class CommandVehicle(object):
         agent_class = agent_library.get(self.agent_config.category)
         self.agent = agent_class(
             idx=self.agent_config.idx,
-            location=self.agent_config.initial_waypoint.location,
+            location=copy.deepcopy(self.agent_config.initial_waypoint.location),
             role=self.agent_config.role
         )
-        self.route = self.agent_config.route
+        self.route = self.agent_config.behavior
         self.traffic_bridge = traffic_bridge
 
         self.debug = DataProvider.debug

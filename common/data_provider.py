@@ -1,5 +1,7 @@
 import os
 
+from omegaconf import DictConfig
+
 from common.constants import Constants
 
 class DataProvider:
@@ -13,9 +15,10 @@ class DataProvider:
     resume: bool = True # resume from previous one
     tag: str = "" # tag for recording this run
     map_name: str = ""
-    container_name: str = "test" # prefix
+    container_name: str = None # prefix
 
     map_parser = None
+    oracle_cfg: dict = {}
 
     # saver flags
     save_traffic_recording: bool = True # this is for saving traffic recording -> TODO: change to online io
@@ -31,24 +34,31 @@ class DataProvider:
 
     @staticmethod
     def debug_folder():
-        debug_folder = os.path.join(DataProvider.output_root, 'debug')
+        debug_folder = os.path.join(DataProvider.output_folder(), 'debug')
         if not os.path.exists(debug_folder):
             os.makedirs(debug_folder)
         return debug_folder
 
     @staticmethod
     def traffic_recording_folder():
-        traffic_recording_folder = os.path.join(DataProvider.output_root, 'traffic')
+        traffic_recording_folder = os.path.join(DataProvider.output_folder(), 'traffic')
         if not os.path.exists(traffic_recording_folder):
             os.makedirs(traffic_recording_folder)
         return traffic_recording_folder
 
     @staticmethod
     def apollo_recording_folder():
-        apollo_recording_folder = os.path.join(DataProvider.output_root, 'apollo')
+        apollo_recording_folder = os.path.join(DataProvider.output_folder(), 'apollo')
         if not os.path.exists(apollo_recording_folder):
             os.makedirs(apollo_recording_folder)
         return apollo_recording_folder
+
+    @staticmethod
+    def scenario_folder():
+        scenario_folder = os.path.join(DataProvider.output_folder(), 'scenario')
+        if not os.path.exists(scenario_folder):
+            os.makedirs(scenario_folder)
+        return scenario_folder
 
     @staticmethod
     def container_record_folder():

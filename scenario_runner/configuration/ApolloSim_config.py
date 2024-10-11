@@ -1,6 +1,9 @@
+import os
+import json
 from dataclasses import dataclass, asdict
 from typing import Dict, Any
 
+from common.data_provider import DataProvider
 from scenario_runner.drive_simulator.ApolloSim.config import StaticObstacleConfigPool, WalkerConfigPool, VehicleConfigPool, TrafficLightConfig
 from scenario_runner.drive_simulator.ApolloSim.config.apollo import ApolloConfigPool
 
@@ -21,15 +24,15 @@ class ApolloSimScenarioConfig:
             idx: Any,
             ego_config_pool: ApolloConfigPool,
             static_obstacle_config_pool: StaticObstacleConfigPool,
-            waypoint_walker_config_pool: WalkerConfigPool,
-            waypoint_vehicle_config_pool: VehicleConfigPool,
+            walker_config_pool: WalkerConfigPool,
+            vehicle_config_pool: VehicleConfigPool,
             traffic_light_config: TrafficLightConfig,
     ):
         self.idx = idx
         self.ego_config_pool = ego_config_pool
         self.static_obstacle_config_pool = static_obstacle_config_pool
-        self.waypoint_walker_config_pool = waypoint_walker_config_pool
-        self.waypoint_vehicle_config_pool = waypoint_vehicle_config_pool
+        self.walker_config_pool = walker_config_pool
+        self.vehicle_config_pool = vehicle_config_pool
         self.traffic_light_config = traffic_light_config
 
     @classmethod
@@ -43,3 +46,9 @@ class ApolloSimScenarioConfig:
 
     def json_data(self) -> Dict:
         return asdict(self)
+
+    def export(self):
+        json_data = self.json_data()
+        file_path = os.path.join(DataProvider.scenario_folder(), f"{self.idx}.json")
+        with open(file_path, "w") as f:
+            json.dump(json_data, f, indent=4)

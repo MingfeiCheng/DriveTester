@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from .. import register_agent
 from ..base import BaseModel, LocationConfig, BBoxConfig
 
@@ -33,6 +35,7 @@ vehicle_param {
 }
 """
 @register_agent("vehicle.lincoln.mkz")
+@dataclass
 class LincolnMKZ(BaseModel):
 
     # basic information - fixed

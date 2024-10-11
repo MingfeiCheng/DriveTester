@@ -28,12 +28,16 @@ class TrafficBridge(object):
 
     def recording(self) -> Dict[str, Any]:
         with self._update_lock:
+            recording_data = {
+                "timestamp": time.time(),
+                "actor_state": {},
+                "traffic_light_config": self._traffic_light_config
+            }
+            for actor_id, actor_state in self._actor_state.items():
+                recording_data["actor_state"][actor_id] = actor_state.json_data()
+
             return copy.deepcopy(
-                {
-                    "timestamp": time.time(),
-                    "actor_state": self._actor_state,
-                    "traffic_light_config": self._traffic_light_config,
-                }
+                recording_data
             )
 
     def cleanup(self):
@@ -55,14 +59,14 @@ class TrafficBridge(object):
             raise KeyError(f"actor_id {actor_id} exists, please check.")
 
         with self._update_lock:
-            self._actor_state[actor_id] = actor_state # register for initial
+            self._actor_state[actor_id] = copy.deepcopy(actor_state) # register for initial
 
     def update_actor(self, actor_id: Any, actor_state: AgentClass):
         if actor_id not in self._actor_state:
             raise KeyError(f"actor_id {actor_id} exists, please check and register first.")
 
         with self._update_lock:
-            self._actor_state[actor_id] = actor_state
+            self._actor_state[actor_id] = copy.deepcopy(actor_state)
 
     def remove_actor(self, actor_id: Any):
         with self._update_lock:

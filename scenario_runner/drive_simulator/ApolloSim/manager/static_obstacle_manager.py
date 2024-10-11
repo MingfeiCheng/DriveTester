@@ -1,4 +1,6 @@
-from scenario_runner.drive_simulator.ApolloSim.library import register_agent
+import copy
+
+from scenario_runner.drive_simulator.ApolloSim.library import agent_library
 from scenario_runner.drive_simulator.ApolloSim.traffic_messenger import TrafficBridge
 from scenario_runner.drive_simulator.ApolloSim.config.static import StaticObstacleConfigPool
 
@@ -14,10 +16,10 @@ class StaticObstacleManager(object):
 
         self.agents = list()
         for config in self.config_pool.configs:
-            agent_class = register_agent(config.category)
+            agent_class = agent_library.get(config.category)
             agent = agent_class(
                 idx=config.idx,
-                location=config.initial_waypoint.location,
+                location=copy.deepcopy(config.initial_waypoint.location),
                 role=config.role
             )
             self.agents.append(agent)
