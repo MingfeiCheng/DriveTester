@@ -246,11 +246,11 @@ class ScenarioGenerator:
         traffic_light_config = TrafficLightConfig()
 
         scenario_cfg = ApolloSimScenarioConfig(
-            '0',
+            idx = '0',
             ego_config_pool=ego_config_pool,
             static_obstacle_config_pool=static_obstacle_config_pool,
-            waypoint_vehicle_config_pool=waypoint_vehicle_config_pool,
-            waypoint_walker_config_pool=waypoint_walker_config_pool,
+            vehicle_config_pool=waypoint_vehicle_config_pool,
+            walker_config_pool=waypoint_walker_config_pool,
             traffic_light_config=traffic_light_config
         )
         return scenario_cfg
@@ -262,7 +262,7 @@ class ScenarioGenerator:
         scenario_cfg = self._generate_empty_scenario_config(route)
         scenario_runner = ScenarioRunner(DictConfig(
             {
-                "container_name": "test",
+                "container_name": DataProvider.container_name,
                 "save_traffic_recording": True,
                 "save_apollo_recording": True
             }
@@ -292,7 +292,7 @@ if __name__ == '__main__':
     parser.add_argument('--start_lane_s', type=float, default=10.0)
     parser.add_argument('--end_lane_id', type=str, default='lane_15') # 1544_1_-1 lane_15
     parser.add_argument('--end_lane_s', type=str, default=4.0)
-    parser.add_argument('--save_root', type=str, default='/data/c/mingfeicheng/ApolloSim/v7.0/data/seeds/debug')
+    parser.add_argument('--save_root', type=str, default=DataProvider.debug_folder())
     parser.add_argument('--tag', type=str, default='test')
     parser.add_argument('--container_name', type=str, default='test')
     args = parser.parse_args()
