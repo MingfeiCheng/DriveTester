@@ -73,7 +73,7 @@ dependencies:
       - psutil==6.1.1
       - pyasn1==0.5.1
       - pyasn1-modules==0.3.0
-      - pymoo==0.6.1.2
+      - pymoo==0.4.2.2
       - requests-oauthlib==2.0.0
       - rsa==4.9
       - shapely==2.0.6
