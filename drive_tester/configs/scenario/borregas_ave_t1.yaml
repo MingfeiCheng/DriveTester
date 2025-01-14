@@ -1,7 +1,0 @@
-name: borregas_ave_t1
-map_name: borregas_ave
-start_lane_id: lane_31
-end_lane_id: lane_7
-num_vehicle: 5
-num_walker: 2
-num_static: 2

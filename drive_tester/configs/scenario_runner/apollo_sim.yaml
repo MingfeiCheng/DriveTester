@@ -1,7 +1,0 @@
-  # SimEnv
-  name: ApolloSim
-  apollo_root: apollo # PLEASE REPLACE THIS WITH YOUR APOLLO ROOT
-  map_root: drive_tester/scenario_runner/ApolloSim/data # MAYBE REPLACE THIS WITH YOUR MAP ROOT
-  off_screen: false
-  sim_frequency: 25.0
-  sim_port: 15001

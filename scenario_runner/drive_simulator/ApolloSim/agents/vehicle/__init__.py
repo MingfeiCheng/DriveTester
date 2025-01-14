@@ -1,2 +1,0 @@
-from .waypoint_vehicle.waypoint_agent import WaypointVehicle
-from .command_vehicle.command_agent import CommandVehicle
