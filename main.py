@@ -1,80 +1,59 @@
 import os
 import sys
 import hydra
-import shutil
 
-from importlib import import_module
 from loguru import logger
 from omegaconf import DictConfig, OmegaConf
 
-from common.data_provider import DataProvider
-from testing_engine import tester_library
-from scenario_runner import runner_library
+from drive_tester.common.global_config import GlobalConfig
+from drive_tester.registry import ENGINE_REGISTRY, RUNNER_REGISTRY
 
-def load_entry_point(name):
-    mod_name, attr_name = name.split(":")
-    mod = import_module(mod_name)
-    fn = getattr(mod, attr_name)
-    return fn
-
-@hydra.main(config_path='configs', config_name='random', version_base=None)
+@hydra.main(config_path='drive_tester/configs', config_name='DriveTester', version_base=None)
 def main(cfg: DictConfig):
-    # config parameters
-    DataProvider.debug = cfg.system.debug
-    DataProvider.resume = cfg.system.resume
-    DataProvider.tag = f"{cfg.testing_engine.algorithm.name}_{cfg.scenario.map_name}_{cfg.scenario.start_lane_id}_{cfg.scenario.end_lane_id}_{cfg.system.tag}"
 
-    if DataProvider.debug:
+    # config parameters
+    GlobalConfig.debug = cfg.debug
+    GlobalConfig.resume = cfg.resume
+    GlobalConfig.save_record = cfg.save_record
+
+    output_root = cfg.output_root
+    r_output_root = os.path.join(output_root, cfg.scenario_runner.name, cfg.scenario.name, cfg.engine.name, cfg.tag)
+    if not os.path.exists(r_output_root):
+        os.makedirs(r_output_root)
+    GlobalConfig.output_root = r_output_root
+    output_root = GlobalConfig.output_root
+    # print global config
+    GlobalConfig.print()
+
+    if GlobalConfig.debug:
         level = 'DEBUG'
     else:
         level = 'INFO'
-
     logger.configure(handlers=[{"sink": sys.stderr, "level": level}])
+    logger_file = os.path.join(output_root, 'run.log')
+    _ = logger.add(logger_file, level=level, mode="a")  # Use mode="a" for append
+    # save configs
+    OmegaConf.save(config=cfg, f=os.path.join(output_root, 'run_config.yaml'))
 
-    logger.info(f'project root: {DataProvider.project_root}')
-    logger.info(f'apollo root: {DataProvider.apollo_root}')
-    logger.info(f'output root: {DataProvider.output_root}')
+    # direct to specific method, such as mr, avfuzzer..
+    fuzzer_class = ENGINE_REGISTRY.get(f"fuzzer.{cfg.engine.name}")
+    logger.info(f'Load fuzzer class from: {fuzzer_class}')
 
-    # confirm the output folder for the run
-    output_folder = DataProvider.output_folder()
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
-    else:
-        if not DataProvider.resume:
-            logger.warning(f"Due to the output folder exists, and not resume, delete!. {output_folder}")
-            shutil.rmtree(output_folder)
-            os.makedirs(output_folder)
-
-    logger.info(f'run save folder: {output_folder}')
-
-    # save folder
-    if not os.path.exists(DataProvider.output_folder()):
-        os.makedirs(DataProvider.output_folder)
-
-    logger_file = os.path.join(DataProvider.output_folder(), 'run.log')
-    if os.path.exists(logger_file):
-        os.remove(logger_file)
-    _ = logger.add(logger_file, level=level)
-
-    OmegaConf.save(config=cfg, f=os.path.join(DataProvider.output_folder(), 'run_config.yaml'))
-
-    # create scenario runner
-    runner_class = runner_library.get(f"runner.{cfg.scenario_runner.name}")
+    # create scenario runner class
+    runner_class = RUNNER_REGISTRY.get(f"runner.{cfg.scenario_runner.name}")
     logger.info(f'Load runner class from: {runner_class}')
-    scenario_runner = runner_class(cfg.scenario_runner.parameters)
 
-    # direct to specific method, such as mr, avfuzz..
-    fuzz_class = tester_library.get(f"tester.{cfg.testing_engine.algorithm.name}")
-    logger.info(f'Load fuzzing class from: {fuzz_class}')
-
-    fuzz_instance = fuzz_class(
-        scenario_runner,
-        cfg.scenario,
-        cfg.testing_engine.algorithm,
-        cfg.testing_engine.oracle
+    runner_instance = runner_class(
+        cfg.scenario_runner,
+        cfg.scenario
     )
-    fuzz_instance.run()
+    fuzzer_instance = fuzzer_class(
+        runner_instance,
+        cfg.engine
+    )
+    fuzzer_instance.run()
+    runner_instance.shutdown()
 
 if __name__ == '__main__':
     main()
-    logger.info('DONE Fuzzing!')
+    logger.info('DONE DriveTester @.@!')
