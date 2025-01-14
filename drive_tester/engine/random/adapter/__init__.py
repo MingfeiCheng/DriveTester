@@ -1,0 +1,1 @@
+from drive_tester.engine.random.adapter.ApolloSim import ApolloSimAdapter
