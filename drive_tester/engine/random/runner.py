@@ -14,6 +14,8 @@ class RandomFuzzer(Fuzzer):
     """
     The random fuzzer is:
     """
+    manager_name = "manager.random"
+
     def __init__(
             self,
             scenario_runner,
@@ -73,7 +75,10 @@ class RandomFuzzer(Fuzzer):
 
             # runner
             self.current_index += 1
-            scenario_result = self.scenario_runner.run(mutated_scenario)
+            scenario_result = self.scenario_runner.run(
+                mutated_scenario,
+                self.manager_name
+            )
 
             # check the result (adapter for scenario runner output -> fuzzer input)
             fuzzer_result = self.adapter.result_adapter(scenario_result)
